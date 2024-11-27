@@ -13,7 +13,7 @@ public class GameBoard extends JPanel implements KeyListener {
 
     // BufferZone configuration
     private static int BUFFER_ZONE_SIZE = 10; // Grid size of bufferzone
-    private static int MAX_GHOSTS_IN_BUFFER_ZONE = 0; // Max amount of ghosts in bufferzone
+    private static int MAX_GHOSTS_IN_BUFFER_ZONE = 2; // Max amount of ghosts in bufferzone
 
     public int bufferZoneXStart;
     public int bufferZoneXEnd;
@@ -413,8 +413,8 @@ public class GameBoard extends JPanel implements KeyListener {
         try{ Thread.sleep(1); } catch (InterruptedException e) { System.out.println(e); }
         if (pacman!=null) { stateWindow.updatePacmanState(pacman.getStatus()); }
         if (fruit!=null) { stateWindow.updateFruitState(fruit.getStatus()); }
-        threadWindow.updatePacmanState(pacmanThread.getState().toString());
-        threadWindow.updateFruitState(fruitThread.getState().toString());
+        if (pacmanThread!=null) { threadWindow.updatePacmanState(pacmanThread.getState().toString()); }
+        if (fruitThread!=null) { threadWindow.updateFruitState(fruitThread.getState().toString()); }
         for (Ghost ghost : ghosts) {
             stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost));
         }

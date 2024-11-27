@@ -40,6 +40,7 @@ public class Pacman implements Runnable {
             // Check game state again after sleep
             if (!board.isGameRunning()) {
                 setStatus(pacmanState.MORIR);
+                board.update();
                 break;
             }
         }
