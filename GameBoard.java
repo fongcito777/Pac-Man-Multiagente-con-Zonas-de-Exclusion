@@ -4,15 +4,26 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Random;
 
 public class GameBoard extends JPanel implements KeyListener {
     private static final int CELL_SIZE = 20;
     private static final int BOARD_WIDTH = 28;
     private static final int BOARD_HEIGHT = 28;
 
+    // BufferZone configuration
+    private static int BUFFER_ZONE_SIZE = 10; // Grid size of bufferzone
+    private static int MAX_GHOSTS_IN_BUFFER_ZONE = 0; // Max amount of ghosts in bufferzone
+
+    public int bufferZoneXStart;
+    public int bufferZoneXEnd;
+    public int bufferZoneYStart;
+    public int bufferZoneYEnd;
+
     private Pacman pacman;
     private ArrayList<Ghost> ghosts;
     private Fruit fruit;
+    private ArrayList<Ghost> ghostsInBufferZone;
     private int[][] board;
     private int score;
     private int totalDots;
@@ -35,13 +46,16 @@ public class GameBoard extends JPanel implements KeyListener {
         fruitAppearTime = 4;
         fruitDisappearTime = 15;
         initGame();
+        initRandomBufferZone();
         stateWindow.addGhostsLabels(gN);
+        ghostsInBufferZone = new ArrayList<>();
     }
 
     private void initGame() {
         running = true;
         board = new int[BOARD_HEIGHT][BOARD_WIDTH];
         totalDots = 0;
+        if (ghostsInBufferZone != null) { ghostsInBufferZone.clear(); }
 
         // Create symmetrical walls
         for (int i = 0; i < BOARD_HEIGHT; i++) {
@@ -119,6 +133,39 @@ public class GameBoard extends JPanel implements KeyListener {
         fruit = new Fruit(this, fruitAppearTime, fruitDisappearTime);
         fruitThread = new Thread(fruit);
         fruitThread.start();
+    }
+
+    private void initRandomBufferZone() {
+        Random random = new Random();
+
+        // Decide which corner (0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right)
+        int corner = random.nextInt(4);
+
+        switch (corner) {
+            case 0: // Top-left corner
+                bufferZoneXStart = 1;
+                bufferZoneYStart = 1;
+                break;
+            case 1: // Top-right corner
+                bufferZoneXStart = BOARD_WIDTH - BUFFER_ZONE_SIZE - 1;
+                bufferZoneYStart = 1;
+                break;
+            case 2: // Bottom-left corner
+                bufferZoneXStart = 1;
+                bufferZoneYStart = BOARD_HEIGHT - BUFFER_ZONE_SIZE - 1;
+                break;
+            case 3: // Bottom-right corner
+                bufferZoneXStart = BOARD_WIDTH - BUFFER_ZONE_SIZE - 1;
+                bufferZoneYStart = BOARD_HEIGHT - BUFFER_ZONE_SIZE - 1;
+                break;
+        }
+
+        // Calculate end coordinates
+        bufferZoneXEnd = bufferZoneXStart + BUFFER_ZONE_SIZE - 1;
+        bufferZoneYEnd = bufferZoneYStart + BUFFER_ZONE_SIZE - 1;
+
+        // Initialize buffer zone list
+        ghostsInBufferZone = new ArrayList<>();
     }
 
     private void drawSymmetricLine(int x1, int y1, int x2, int y2) {
@@ -210,6 +257,32 @@ public class GameBoard extends JPanel implements KeyListener {
         }
     }
 
+    public boolean canEnterBufferZone(Ghost ghost) {
+        // Check if ghost is in buffer zone coordinates
+        boolean inBufferZoneArea = (ghost.getX() >= bufferZoneXStart &&
+                ghost.getX() <= bufferZoneXEnd &&
+                ghost.getY() >= bufferZoneYStart &&
+                ghost.getY() <= bufferZoneYEnd);
+
+        // If in buffer zone area, check occupancy
+        if (inBufferZoneArea) {
+            if (ghostsInBufferZone.size() < MAX_GHOSTS_IN_BUFFER_ZONE) {
+                // If not already in buffer zone list, add
+                if (!ghostsInBufferZone.contains(ghost)) {
+                    ghostsInBufferZone.add(ghost);
+                }
+                return true;
+            } else {
+                // Buffer zone is full
+                return false;
+            }
+        }
+
+        // Remove ghost from buffer zone if it leaves the area
+        if (ghostsInBufferZone!=null) { ghostsInBufferZone.remove(ghost); }
+        return true;
+    }
+
     // Add method to check if game is running
     public boolean isGameRunning() {
         return gameRunning;
@@ -263,6 +336,12 @@ public class GameBoard extends JPanel implements KeyListener {
             g.drawString("SAFE TIME: " + ((SAFE_PERIOD - elapsedTime) / 1000 + 1) + "s",
                     200, BOARD_HEIGHT * CELL_SIZE + 20);
         }
+        // Highlight buffer zone
+        g.setColor(new Color(100, 100, 100, 50)); // Semi-transparent gray
+        g.fillRect(bufferZoneXStart * CELL_SIZE,
+                bufferZoneYStart * CELL_SIZE,
+                (bufferZoneXEnd - bufferZoneXStart + 1) * CELL_SIZE,
+                (bufferZoneYEnd - bufferZoneYStart + 1) * CELL_SIZE);
     }
 
     public void keyPressed(KeyEvent e) {
@@ -326,8 +405,8 @@ public class GameBoard extends JPanel implements KeyListener {
     public void update() {
         //stateWindow.updatePacmanState(pacmanThread.getState().toString());
         try{ Thread.sleep(1); } catch (InterruptedException e) { System.out.println(e); }
-        stateWindow.updatePacmanState(pacman.getStatus());
-        stateWindow.updateFruitState(fruit.getStatus());
+        if (pacman!=null) { stateWindow.updatePacmanState(pacman.getStatus()); }
+        if (fruit!=null) { stateWindow.updateFruitState(fruit.getStatus()); }
         for (Ghost ghost : ghosts) {
             stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost));
         }
