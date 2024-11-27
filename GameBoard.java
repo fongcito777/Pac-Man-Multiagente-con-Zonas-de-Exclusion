@@ -1,7 +1,10 @@
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
@@ -41,17 +44,22 @@ public class GameBoard extends JPanel implements KeyListener {
     public Thread pacmanThread;
     public Thread fruitThread;
 
-    public GameBoard(int gN) {
+    private Clip clip;
+
+    public GameBoard(int gN, int appear, int disappear, int gridSize, int ghostZone) {
         setFocusable(true);
         addKeyListener(this);
         ghostNumber = gN;
-        fruitAppearTime = 4;
-        fruitDisappearTime = 15;
+        fruitAppearTime = appear;
+        fruitDisappearTime = disappear;
+        BUFFER_ZONE_SIZE = gridSize;
+        MAX_GHOSTS_IN_BUFFER_ZONE = ghostZone;
         initGame();
         initRandomBufferZone();
         stateWindow.addGhostsLabels(gN);
         threadWindow.addGhostsLabels(gN);
         ghostsInBufferZone = new ArrayList<>();
+        playSound("clip.wav");
     }
 
     private void initGame() {
@@ -416,11 +424,33 @@ public class GameBoard extends JPanel implements KeyListener {
         if (pacmanThread!=null) { threadWindow.updatePacmanState(pacmanThread.getState().toString()); }
         if (fruitThread!=null) { threadWindow.updateFruitState(fruitThread.getState().toString()); }
         for (Ghost ghost : ghosts) {
-            stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost));
+            if (ghost!=null){ stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost)); }
         }
         for (Thread ghostThread : ghostThreads) {
-            threadWindow.updateGhostState(ghostThread.getState().toString(), ghostThreads.indexOf(ghostThread));
+            if (ghostThread!=null) { threadWindow.updateGhostState(ghostThread.getState().toString(), ghostThreads.indexOf(ghostThread)); }
         }
         repaint();
+    }
+
+    public void playSound(String filePath) {
+        try {
+            // Open an audio input stream.
+            File soundFile = new File(filePath);
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+
+            // Get a sound clip resource.
+            clip = AudioSystem.getClip();
+
+            // Open audio clip and load samples from the audio input stream.
+            clip.open(audioIn);
+
+            // Loop the clip continuously.
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+
+            // Start the clip.
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            e.printStackTrace();
+        }
     }
 }
