@@ -7,6 +7,8 @@ public class Ghost implements Runnable {
     private Color color;
     private Random random;
     private boolean running;  // Add running flag
+    public enum ghostState { INICIAR, PERSEGUIR, COLISIONAR, REVISAR_ZONA, RECHAZAR }
+    private ghostState status;
 
     public Ghost(int x, int y, GameBoard board) {
         this.x = x;
@@ -14,6 +16,7 @@ public class Ghost implements Runnable {
         this.board = board;
         this.random = new Random();
         this.running = true;  // Initialize running as true
+        this.status = ghostState.INICIAR;
 
         // Assign random color to ghost
         Color[] colors = {Color.RED, Color.PINK, Color.CYAN, Color.ORANGE};
@@ -41,6 +44,7 @@ public class Ghost implements Runnable {
                 x += dx;
                 y += dy;
                 board.checkCollision();
+                setStatus(ghostState.PERSEGUIR);
             }
 
             try {
@@ -60,4 +64,6 @@ public class Ghost implements Runnable {
     public int getX() { return x; }
     public int getY() { return y; }
     public Color getColor() { return color; }
+    public String getStatus() { return status.name(); }
+    public void setStatus(ghostState state) { this.status = state; }
 }

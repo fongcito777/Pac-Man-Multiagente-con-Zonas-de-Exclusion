@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class GameBoard extends JPanel implements KeyListener {
     private static final int CELL_SIZE = 20;
@@ -11,6 +12,7 @@ public class GameBoard extends JPanel implements KeyListener {
 
     private Pacman pacman;
     private ArrayList<Ghost> ghosts;
+    private Fruit fruit;
     private int[][] board;
     private int score;
     private int totalDots;
@@ -18,18 +20,22 @@ public class GameBoard extends JPanel implements KeyListener {
     private long gameStartTime;
     private static final long SAFE_PERIOD = 3000; // 3 seconds safe period
 
-    private int ghostNumber;
+    private int ghostNumber, fruitAppearTime, fruitDisappearTime;
 
     public boolean running;
     public StateWindow stateWindow = new StateWindow();
 
     public Thread pacmanThread;
+    public Thread fruitThread;
 
     public GameBoard(int gN) {
         setFocusable(true);
         addKeyListener(this);
         ghostNumber = gN;
+        fruitAppearTime = 4;
+        fruitDisappearTime = 15;
         initGame();
+        stateWindow.addGhostsLabels(gN);
     }
 
     private void initGame() {
@@ -108,6 +114,11 @@ public class GameBoard extends JPanel implements KeyListener {
             Thread ghostThread = new Thread(ghost);
             ghostThread.start();
         }
+
+        //Initialize Fruit
+        fruit = new Fruit(this, fruitAppearTime, fruitDisappearTime);
+        fruitThread = new Thread(fruit);
+        fruitThread.start();
     }
 
     private void drawSymmetricLine(int x1, int y1, int x2, int y2) {
@@ -193,6 +204,10 @@ public class GameBoard extends JPanel implements KeyListener {
                 ghost.stopRunning();
             }
         }
+        // Stop Fruit
+        if (fruit != null) {
+            fruit.stopRunning();
+        }
     }
 
     // Add method to check if game is running
@@ -229,6 +244,14 @@ public class GameBoard extends JPanel implements KeyListener {
                     CELL_SIZE, CELL_SIZE);
         }
 
+        // Draw Fruit
+        if (fruit.isVisible()) {
+            stateWindow.updateFruitState(fruit.getStatus());
+            g.setColor(Color.RED);
+            g.fillOval(fruit.getX() * CELL_SIZE, fruit.getY() * CELL_SIZE,
+                    CELL_SIZE, CELL_SIZE);
+        }
+
         // Draw Score
         g.setColor(Color.WHITE);
         g.drawString("Score: " + score, 10, BOARD_HEIGHT * CELL_SIZE + 20);
@@ -244,6 +267,7 @@ public class GameBoard extends JPanel implements KeyListener {
 
     public void keyPressed(KeyEvent e) {
         if (!gameRunning) return;
+        pacman.setStatus(Pacman.pacmanState.CAMINAR);
 
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT:
@@ -274,19 +298,39 @@ public class GameBoard extends JPanel implements KeyListener {
             return;
         }
 
+        if (!Objects.equals(pacman.getStatus(), Pacman.pacmanState.INICIAR.name())) {
+            pacman.setStatus(Pacman.pacmanState.CAMINAR);
+        }
+
         for (Ghost ghost : ghosts) {
             if (pacman.getX() == ghost.getX() && pacman.getY() == ghost.getY()) {
                 stateWindow.updatePacmanState("TERMINATED");
+                pacman.setStatus(Pacman.pacmanState.COLISIONAR);
+                ghost.setStatus(Ghost.ghostState.COLISIONAR);
                 stopGame(); // Call stopGame instead of just setting gameRunning to false
                 JOptionPane.showMessageDialog(this, "Game Over! Score: " + score);
                 initGame();
                 break;
             }
         }
+
+        // Check fruit collision
+        if (fruit.isVisible() && pacman.getX() == fruit.getX() && pacman.getY() == fruit.getY()) {
+            fruit.collect();
+            pacman.setStatus(Pacman.pacmanState.COLISIONAR);
+            stateWindow.updateFruitState(fruit.getStatus());
+            score += 100; // Bonus points for fruit
+        }
     }
 
     public void update() {
-        stateWindow.updatePacmanState(pacmanThread.getState().toString());
+        //stateWindow.updatePacmanState(pacmanThread.getState().toString());
+        try{ Thread.sleep(1); } catch (InterruptedException e) { System.out.println(e); }
+        stateWindow.updatePacmanState(pacman.getStatus());
+        stateWindow.updateFruitState(fruit.getStatus());
+        for (Ghost ghost : ghosts) {
+            stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost));
+        }
         repaint();
     }
 }

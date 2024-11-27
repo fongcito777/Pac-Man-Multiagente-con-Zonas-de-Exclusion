@@ -3,6 +3,8 @@ public class Pacman implements Runnable {
     private int dx, dy;
     private GameBoard board;
     private boolean running;
+    public enum pacmanState { INICIAR, CAMINAR, COLISIONAR, MORIR }
+    private pacmanState status;
 
     public Pacman(int x, int y, GameBoard board) {
         this.x = x;
@@ -11,6 +13,7 @@ public class Pacman implements Runnable {
         this.dx = 0;
         this.dy = 0;
         this.running = true;
+        this.status = pacmanState.INICIAR;
     }
 
     public void stopRunning() {
@@ -24,7 +27,7 @@ public class Pacman implements Runnable {
                 y += dy;
                 board.eatDot(x, y);
                 board.checkCollision();
-            }
+            } else { setStatus(pacmanState.COLISIONAR); }
             board.update();
 
             try {
@@ -36,6 +39,7 @@ public class Pacman implements Runnable {
 
             // Check game state again after sleep
             if (!board.isGameRunning()) {
+                setStatus(pacmanState.MORIR);
                 break;
             }
         }
@@ -48,4 +52,6 @@ public class Pacman implements Runnable {
 
     public int getX() { return x; }
     public int getY() { return y; }
+    public String getStatus() { return status.name(); }
+    public void setStatus(pacmanState state) { this.status = state; }
 }
