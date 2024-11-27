@@ -40,7 +40,7 @@ public class StateWindow {
         pacmanStateLabel.setText("Pacman: " + state);
     }
     public void updateGhostState(String state, int ghost) {
-        ghostStateLabels.get(ghost).setText("Ghost " + (ghost + 1) + ": " + state);
+        if (ghostStateLabels!=null) { ghostStateLabels.get(ghost).setText("Ghost " + (ghost + 1) + ": " + state); }
     }
     public void updateFruitState(String state) {
         fruitStateLabel.setText("Fruit: " + state);
