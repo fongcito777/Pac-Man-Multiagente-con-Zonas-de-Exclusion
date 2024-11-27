@@ -12,6 +12,7 @@ public class GameBoard extends JPanel implements KeyListener {
 
     private Pacman pacman;
     private ArrayList<Ghost> ghosts;
+    private ArrayList<Thread> ghostThreads;
     private Fruit fruit;
     private int[][] board;
     private int score;
@@ -24,6 +25,7 @@ public class GameBoard extends JPanel implements KeyListener {
 
     public boolean running;
     public StateWindow stateWindow = new StateWindow();
+    public ThreadWindow threadWindow = new ThreadWindow();
 
     public Thread pacmanThread;
     public Thread fruitThread;
@@ -36,6 +38,7 @@ public class GameBoard extends JPanel implements KeyListener {
         fruitDisappearTime = 15;
         initGame();
         stateWindow.addGhostsLabels(gN);
+        threadWindow.addGhostsLabels(gN);
     }
 
     private void initGame() {
@@ -101,6 +104,8 @@ public class GameBoard extends JPanel implements KeyListener {
 
         // Initialize Ghosts in their starting positions
         ghosts = new ArrayList<>();
+        ghostThreads = new ArrayList<>();
+
         int[][] ghostSpawns = {
                 {13, 11}, // Top left of center
                 {15, 11}, // Top right of center
@@ -112,6 +117,7 @@ public class GameBoard extends JPanel implements KeyListener {
             Ghost ghost = new Ghost(ghostSpawns[i%4][0], ghostSpawns[i%4][1], this);
             ghosts.add(ghost);
             Thread ghostThread = new Thread(ghost);
+            ghostThreads.add(ghostThread);
             ghostThread.start();
         }
 
@@ -328,8 +334,13 @@ public class GameBoard extends JPanel implements KeyListener {
         try{ Thread.sleep(1); } catch (InterruptedException e) { System.out.println(e); }
         stateWindow.updatePacmanState(pacman.getStatus());
         stateWindow.updateFruitState(fruit.getStatus());
+        threadWindow.updatePacmanState(pacmanThread.getState().toString());
+        threadWindow.updateFruitState(fruitThread.getState().toString());
         for (Ghost ghost : ghosts) {
             stateWindow.updateGhostState(ghost.getStatus(),ghosts.indexOf(ghost));
+        }
+        for (Thread ghostThread : ghostThreads) {
+            threadWindow.updateGhostState(ghostThread.getState().toString(), ghostThreads.indexOf(ghostThread));
         }
         repaint();
     }

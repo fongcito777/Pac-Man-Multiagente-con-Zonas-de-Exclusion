@@ -2,16 +2,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-public class StateWindow {
+public class ThreadWindow {
     private JFrame frame;
     private JLabel pacmanStateLabel;
     //private JLabel ghostStateLabel;
-    private ArrayList<JLabel> ghostStateLabels;
+    private ArrayList<JLabel> ghostStateLabels = new ArrayList<JLabel>();
     private JLabel fruitStateLabel;
     private int ghostAmount;
 
-    public StateWindow() {
-        frame = new JFrame("Agent States");
+    public ThreadWindow() {
+        frame = new JFrame("Thread States");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(300, 200);
         frame.setLayout(new GridLayout(2, 1));
@@ -26,9 +26,9 @@ public class StateWindow {
     }
 
     public void addGhostsLabels(int ghostNum) {
-        frame.setLayout(new GridLayout(ghostNum+2, 1));
+        frame.setLayout(new GridLayout(ghostNum + 2, 1));
         ghostAmount = ghostNum;
-        ghostStateLabels = new ArrayList<>();
+
         for (int i = 0; i < ghostAmount; i++) {
             JLabel ghost = new JLabel("Ghost " + (i + 1) + ": ");
             ghostStateLabels.add(ghost);
